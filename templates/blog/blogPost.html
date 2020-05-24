@@ -1,0 +1,108 @@
+{% extends '../base.html' %}
+
+{% block title%} Blog-post {% endblock %}
+
+{% block body %}
+{% load static %}
+{% load humanize %}
+{% load get_dict %}
+<div class="container">
+  <div class="blog-post">
+    <h2 class="blog-post-title">{{post.title}}</h2>
+    <p class="blog-post-meta">{{post.timeStamp}} by <a href="/about">{{post.author}}</a> [<span>{{post.views}} views</span>]</p>
+    
+
+    <p>{{post.content|safe}}</p>
+    <hr>
+
+  </div>
+</div>
+<div class="container">
+  {% comment %} <h2>Comments({{comment_counts}})</h2> {% endcomment %}
+
+  {% comment %} .count is a process to get count in django template of a queryset {% endcomment %}
+  <h2>Comments({{comments.count}})</h2>
+
+  <div class="my-2">
+
+    {% if user.is_authenticated %}
+    <form action="/blog/postComment" method="post">
+      {% csrf_token %}
+      <div class="row">
+        <input class="form-control col-md-10" type="text" name="comment" placeholder="Enter the comment here">
+        <input type="hidden" class="col-md-1" name="postSno" value="{{post.sno}}">
+        <input type="hidden" class="col-md-1" name="parentSno" value="">
+        <button type="submit" class="btn btn-success col-md-1 mx-3">POST</button>
+      </div>
+    </form>
+
+    {% else %}
+    <p>Please Login to post a comment</p>
+    {% endif %}
+  </div>
+
+  <br>
+
+
+  {% for comment in comments  %}
+  <div class="row my-3">
+    <div class="col-md-1">
+      <img src="{% static 'img/user.png' %}" alt="Not Loaded" class="rounded w-100 p-2 border border-dark">
+    </div>
+    <div class="col-md-11">
+      <em>{{comment.user.username}}</em> <span class="badge badge-primary">{{comment.timestamp | naturaltime}}</span>
+    <div>
+    {{comment.comment}}
+  </div>
+
+  <div class="reply mx-0">
+
+    {% if user.is_authenticated %}
+    <a class="" data-toggle="collapse" href="#replyBox{{comment.sno}}" role="button" aria-expanded="false"
+      aria-controls="replyBox{{comment.sno}}">
+      Reply
+    </a>
+
+    <div class="collapse" id="replyBox{{comment.sno}}">
+      <div class="card card-body">
+        <form action="/blog/postComment" method="post">
+          {% csrf_token %}
+          <div class="row">
+            <input class="form-control col-md-10" type="text" name="comment" placeholder="Enter the reply here">
+            <input type="hidden" class="col-md-1" name="postSno" value="{{post.sno}}">
+            <input type="hidden" class="col-md-1" name="parentSno" value="{{comment.sno}}">
+            <button type="submit" class="btn btn-success col-md-1 mx-3">POST</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-info">
+      Login to Reply
+    </p>
+    {% endif %}
+
+    {% if replyDict|get_val:comment.sno|length > 0 %}
+    <div class="replies rounded">
+      {% for reply in replyDict|get_val:comment.sno %}
+      <div class="row my-2">
+        <div class="col-md-1">
+          <img src="{% static 'img/user.png' %}" alt="Not Loaded" class="rounded w-100 p-3 border border-dark">
+        </div>
+        <div class="col-md-11">
+          <em>{{reply.user.username}}</em> <span class="badge badge-secondary">{{reply.timestamp | naturaltime}}</span>
+          <div>
+            {{reply.comment}}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}
